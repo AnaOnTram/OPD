@@ -57,9 +57,24 @@ Fine-tuned 100 epochs on `yolo11_Training` / labeled train set (imgsz 640). Olde
 | `train-ViTl_yolo26n` | DINOv3-Large | YOLO26n | 0.9640 | 87 | 0.7336 | 100 | 0.9636 | 0.7336 |
 | `train-ViTs_yolo26n` | DINOv3-Small | YOLO26n | 0.9651 | 89 | 0.7284 | 100 | 0.9620 | 0.7284 |
 
-**Reference (not distilled):** `yolo11n` — best mAP@50 **0.9787**, best mAP@50-95 **0.7807**.
+**References (not distilled):**
+
+| Run | Model | Best mAP@50 | Best mAP@50-95 | Final mAP@50 | Final mAP@50-95 |
+|---|---|---:|---:|---:|---:|
+| `yolo11n_stock` | YOLO11n from `yolo11n.pt` | 0.9787 | **0.7807** | 0.9791 | 0.7790 |
+| `yolo11m_stock` | YOLO11m from `yolo11m.pt` | **0.9872** | **0.7920** | 0.9811 | 0.7914 |
+
+> **Capacity-matched control:** distilled 11n must be compared to stock 11n; distilled 11m to stock 11m. Comparing distilled 11m only to stock 11n confounds **model size** with **distillation**.
 
 ### Key Observations
+
+#### Distill vs stock (capacity-matched) — revised
+
+| Comparison | Δ best mAP@50 | Δ best mAP@50-95 | Verdict |
+|---|---:|---:|---|
+| Best distilled 11m vs **stock 11m** | −0.03 pp (Large) … −0.64 pp (Huge) | −0.07 … +0.11 pp | **No meaningful distill lift** |
+| Best distilled 11n vs **stock 11n** | −0.44 pp (Huge) | **−1.83 pp** | **Distill hurts nano** |
+| Distilled 11m vs stock 11n | +0.8 pp | +1.1 pp | **Capacity only** (n→m), not distill |
 
 #### Student capacity (Small teacher fixed)
 
@@ -69,8 +84,8 @@ Fine-tuned 100 epochs on `yolo11_Training` / labeled train set (imgsz 640). Olde
 | YOLO11n | 0.9734 | 0.7575 |
 | **YOLO11m** | **0.9846** | **0.7923** |
 
-- Medium YOLO11m gains **~1.1 pp mAP@50** and **~3.5 pp mAP@50-95** over YOLO11n under the same Small teacher.
-- Small + YOLO11m also beats **stock YOLO11n** fine-tune on both mAP@50 (+0.12 pp best) and mAP@50-95 (**+1.2 pp**).
+- Medium YOLO11m gains **~1.1 pp mAP@50** and **~3.5 pp mAP@50-95** over YOLO11n under the same Small teacher — **capacity**, not distill (stock 11m alone is 0.9872 / 0.7920).
+- Small + YOLO11m does **not** beat **stock YOLO11m**; it only beats stock YOLO11n because of size.
 - Small + YOLO26n remains the **weakest Small-teacher student** on mAP@50-95 (0.7284).
 
 #### Teacher size (YOLO11m fixed, T=0.07) — complete sweep
@@ -117,8 +132,8 @@ Same teacher (`vitl16`), same T=0.07, same protocol — only student family diff
 | Small | 0.9734 | 0.7575 | 0.7575 | **0.141** |
 | Large | 0.9721 | 0.7564 | 0.7552 | 0.706 |
 
-- **Huge is the best nano** (~+0.5 pp mAP@50-95 vs Small).
-- All three remain **below stock YOLO11n** on mAP@50-95 (0.7807). Distill helps medium more than nano here.
+- **Huge is the best distilled nano** (~+0.5 pp mAP@50-95 vs Small).
+- All three remain **below stock YOLO11n** on mAP@50-95 (0.7807). Distill **hurts** nano; on medium it is a **tie** with stock 11m (not a win).
 
 #### Teacher size (YOLO26n fixed, T mostly 0.07)
 
@@ -130,23 +145,26 @@ Same teacher (`vitl16`), same T=0.07, same protocol — only student family diff
 
 - **mAP@50 is a three-way tie**; mAP@50-95 slightly favors larger teachers (~0.7 pp), still well below YOLO11n.
 
-#### Medium family summary
+#### Medium family summary (incl. stock control)
 
 | Rank (mAP@50-95) | Run | Best mAP@50 | Best mAP@50-95 |
 |------------------|-----|-------------|----------------|
-| 1 | Huge + YOLO11m | 0.9808 | **0.7931** |
+| — | **stock YOLO11m (no distill)** | **0.9872** | **0.7920** |
+| 1 | Huge + YOLO11m | 0.9808 | 0.7931 |
 | 2 | Small + YOLO11m | 0.9846 | 0.7923 |
-| 3 | **Large + YOLO11m** | **0.9869** | 0.7913 |
+| 3 | Large + YOLO11m | 0.9869 | 0.7913 |
 | 4 | Large + YOLO26m | 0.9836 | 0.7815 |
+
+Distilled mediums sit in a **±0.1 pp** band around stock 11m on mAP@50-95; stock owns best mAP@50.
 
 #### Nano family summary
 
 | Rank | Run | Best mAP@50-95 |
 |------|-----|----------------|
-| 1 | **Huge + YOLO11n** | **0.7624** |
+| — | **stock YOLO11n (no distill)** | **0.7807** |
+| 1 | Huge + YOLO11n | 0.7624 |
 | 2 | Small + YOLO11n | 0.7575 |
 | 3 | Large + YOLO11n | 0.7564 |
-| — | stock YOLO11n (no distill) | 0.7807 |
 | — | best YOLO26n (Huge) | 0.7355 |
 
 ---
@@ -180,20 +198,23 @@ Average of the last 10 distillation epochs:
 
 ## 4. Interpretation
 
-### 4.1 Teacher-Student Capacity Match
-On **YOLO11m**, all three teachers land within ~0.2 pp mAP@50-95; Large uniquely tops **mAP@50**. On **YOLO11n**, Huge is a small but real win (~0.5 pp mAP@50-95). Teacher size is secondary to student family/capacity.
+### 4.1 Distillation does not beat capacity-matched stock FT
+With stock **YOLO11m** in the suite, the previous story that “distill helps medium” collapses: distilled 11m ≈ stock 11m (noise), distilled 11n < stock 11n. Any 11m-vs-11n gap is **capacity**.
 
-### 4.2 Student Capacity Matters More Than Teacher Size
-Moving **n → m** under YOLO11 remains the big win (~+3 pp mAP@50-95). Teacher sweeps only move sub-pp within a student size.
+### 4.2 Teacher-Student Capacity Match
+On **YOLO11m**, all three teachers land within ~0.2 pp mAP@50-95 of each other **and** of stock 11m. On **YOLO11n**, Huge is the best distilled nano but still loses to stock. Teacher size is secondary; distill itself is not justified here.
 
-### 4.3 Architectural Alignment (11 vs 26)
-Under the **same Large teacher**, YOLO11m beats YOLO26m by **~1.0 pp mAP@50-95** with almost identical distill losses. Combined with YOLO11n ≫ YOLO26n, this suite favors the **YOLO11 family** for this data/protocol after DINOv3 distill + labeled fine-tune.
+### 4.3 Student Capacity Matters More Than Teacher Size (and more than distill)
+Moving **n → m** under YOLO11 is the big YOLO win (~+1.1 pp mAP@50-95 stock-to-stock). Teacher sweeps only move sub-pp within a student size.
 
-### 4.4 Temperature
+### 4.4 Architectural Alignment (11 vs 26)
+Under the **same Large teacher**, YOLO11m beats YOLO26m by **~1.0 pp** mAP@50-95 with almost identical distill losses. Combined with YOLO11n ≫ YOLO26n, this suite favors the **YOLO11 family** after labeled fine-tune (with or without distill).
+
+### 4.5 Temperature
 Prefer **T=0.07** for new runs so teacher size is not confounded (Large+YOLO26n used 0.10). Large+YOLO11m and Large+YOLO26m both used 0.07 — fair medium architecture comparison.
 
-### 4.5 Limited Distill Data
-With ~1,050 unlabeled images, large teachers do not pull far ahead on final mAP; labeled fine-tune dominates.
+### 4.6 Limited Distill Data
+With ~1,050 unlabeled images, large teachers do not pull far ahead on final mAP; labeled fine-tune saturates YOLO heads.
 
 ---
 
@@ -201,8 +222,9 @@ With ~1,050 unlabeled images, large teachers do not pull far ahead on final mAP;
 
 | Goal | Suggestion |
 |------|------------|
-| **Best accuracy (mAP@50)** | **Large + YOLO11m** (`train-ViTl_yolo11m`) — suite best 0.9869 |
-| **Best accuracy (mAP@50-95) / cost tradeoff** | **Small + YOLO11m** — tied localization mAP, cheapest distill among medium winners |
-| **Best nano** | **Huge + YOLO11n**; **Small + YOLO11n** if distill cost matters |
-| **YOLO26m vs YOLO11m** | Prefer **YOLO11m** under the same Large teacher (~1 pp mAP@50-95) |
-| **Avoid as default** | YOLO26n over YOLO11n on this dataset |
+| **Best YOLO accuracy (default)** | **Stock YOLO11m** fine-tune (`yolo11m_stock`) — mAP@50 **0.9872**, mAP@50-95 **0.7920**; **skip distill** |
+| **Best small edge YOLO** | **Stock YOLO11n** fine-tune — distilled nano is worse |
+| **If already distilled (mAP@50)** | Large + YOLO11m ≈ stock 11m (0.9869) — keep only if already trained |
+| **If already distilled (mAP@50-95)** | Any of Small/Large/Huge → 11m — all ≈ stock 11m |
+| **YOLO26m vs YOLO11m** | Prefer **YOLO11m** (stock or distill) over YOLO26m on this data |
+| **Avoid as default** | Distillation pipeline for this dataset; YOLO26n over YOLO11n |

@@ -10,3 +10,6 @@
 Thumbs.db
 ehthumbs.db
 Desktop.ini
+
+# pi agent/config directory
+.pi/
