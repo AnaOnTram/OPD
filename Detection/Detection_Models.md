@@ -148,11 +148,31 @@ To actualize the best distillation performance, multiple teacher-student combina
 | Combination | Teacher Model | Student Model |
 | ----------- | ------------- | ------------- |
 | 1 | vits16plus | yolo11n |
-| 2 | vitl16plus | yolo11n |
-| 3 | vitl16plus | yolo26n |
-| 4 | vith16plus | yolo26n |
-| 5 | vits16plus | yolo11m |
-| 6 | vith16plus | yolo11m |
+| 2 | vitl16 | yolo11n |
+| 3 | vith16plus | yolo11n |
+| 4 | vits16plus | yolo26n |
+| 5 | vitl16 | yolo26n |
+| 6 | vith16plus | yolo26n |
+| 7 | vits16plus | yolo11m |
+| 8 | vitl16 | yolo11m |
+| 9 | vith16plus | yolo11m |
+| 10 | vitl16plus | yolo26m |
+
+- Distillation Overview
+
+| Item | Value |
+| :--- | ----: |
+| Foundation Model | *See Above* |
+| Student Model | *See Above* |
+| Training Framework | `LightlyTrain` |
+| Training Method | `distillationv3` |
+| Sample Training Script | [distill.py](/Detection/Distillation/distill.py) |
+| Epochs | 100 |
+| Steps | 800 |
+| Batch Size | 128 |
+| Optimizer | AdamW |
+| DTYPE | BF16-mixed |
+| Dataset | `Litter` |
 
 - Training Pipeline
 
@@ -237,21 +257,6 @@ flowchart TB
     GL --> TOTAL
     TOTAL --> OPT["AdamW update<br/>student only"]
 ```
-
-- Distillation Overview
-
-| Item | Value |
-| :--- | ----: |
-| Foundation Model | `DINOv3/ViTs16Plus` |
-| Student Model | `yolo11n` |
-| Training Framework | `LightlyTrain` |
-| Training Method | `distillationv3` |
-| Epochs | 100 |
-| Steps | 800 |
-| Batch Size | 128 |
-| Optimizer | AdamW |
-| DTYPE | BF16-mixed |
-| Dataset | `Litter` |
 
 
 
