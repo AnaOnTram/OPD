@@ -141,29 +141,39 @@ The baseline (`best3.pt`) was originally fine-tuned for only **2 epochs** — fa
 
 ## Distillation
 
-This part introduces a <u>**feature distillation from frozen pretained foundation models**</u>. 
+This part introduces a <u>**feature distillation from frozen pretrained foundation models**</u>. 
 
-To actualize the best distillation performance, multiple teacher-student combinations were tested as follow
+To actualize the best distillation performance, multiple teacher-student combinations were tested as follows:
 
-| Combination | Teacher Model | Student Model |
-| ----------- | ------------- | ------------- |
-| 1 | vits16plus | yolo11n |
-| 2 | vitl16 | yolo11n |
-| 3 | vith16plus | yolo11n |
-| 4 | vits16plus | yolo26n |
-| 5 | vitl16 | yolo26n |
-| 6 | vith16plus | yolo26n |
-| 7 | vits16plus | yolo11m |
-| 8 | vitl16 | yolo11m |
-| 9 | vith16plus | yolo11m |
-| 10 | vitl16plus | yolo26m |
+> **Teacher models:** frozen DINOv3 feature backbones. **Student models:** YOLO detectors — Nano ≈ 2.6 M params, Medium ≈ 20 M params.
 
-- Distillation Overview
+| Combination | Teacher Model | Teacher Size | Student Model | Student Size |
+| :---: | :--- | :---: | :--- | :---: |
+| 1 | `vits16plus` | <font color="blue">Small</font> | `yolo11n` | <font color="gray">Nano</font> |
+| 2 | `vitl16` | <font color="purple">Large</font> | `yolo11n` | <font color="gray">Nano</font> |
+| 3 | `vith16plus` | <font color="red">Huge</font> | `yolo11n` | <font color="gray">Nano</font> |
+| 4 | `vits16plus` | <font color="blue">Small</font> | `yolo26n` | <font color="gray">Nano</font> |
+| 5 | `vitl16` | <font color="purple">Large</font> | `yolo26n` | <font color="gray">Nano</font> |
+| 6 | `vith16plus` | <font color="red">Huge</font> | `yolo26n` | <font color="gray">Nano</font> |
+| 7 | `vits16plus` | <font color="blue">Small</font> | `yolo11m` | <font color="orange">Medium</font> |
+| 8 | `vitl16` | <font color="purple">Large</font> | `yolo11m` | <font color="orange">Medium</font> |
+| 9 | `vith16plus` | <font color="red">Huge</font> | `yolo11m` | <font color="orange">Medium</font> |
+| 10 | `vitl16` | <font color="purple">Large</font> | `yolo26m` | <font color="orange">Medium</font> |
+
+
+| Teacher \ Student | `yolo11n` | `yolo26n` | `yolo11m` | `yolo26m` |
+| :--- | :---: | :---: | :---: | :---: |
+| `vits16plus` | 1 | 4 | 7 | — |
+| `vitl16` | 2 | 5 | 8 | 10 |
+| `vith16plus` | 3 | 6 | 9 | — |
+
+
+### Distillation Overview
 
 | Item | Value |
-| :--- | ----: |
-| Foundation Model | *See Above* |
-| Student Model | *See Above* |
+| :--- | :--- |
+| Foundation Model | `DINOv3` — `vits16plus` / `vitl16` / `vith16plus` (see table above) |
+| Student Model | `YOLO11` / `YOLO26` — `yolo11n` / `yolo26n` / `yolo11m` / `yolo26m` (see table above) |
 | Training Framework | `LightlyTrain` |
 | Training Method | `distillationv3` |
 | Sample Training Script | [distill.py](/Detection/Distillation/distill.py) |
@@ -192,6 +202,7 @@ flowchart LR
         Y11n["YOLO11n<br/>~2.6M"]
         Y26n["YOLO26n<br/>~2.6M"]
         Y11m["YOLO11m<br/>~20M"]
+        Y26m["YOLO26m<br/>~20M"]
     end
 
     subgraph Distill["LightlyTrain distillationv3<br/>100 epochs · AdamW · bf16"]
@@ -214,6 +225,7 @@ flowchart LR
     Y11n --> DV3
     Y26n --> DV3
     Y11m --> DV3
+    Y26m --> DV3
     DV3 --> PT --> FT --> MAP
 ```
 - Training Step
@@ -257,6 +269,15 @@ flowchart TB
     GL --> TOTAL
     TOTAL --> OPT["AdamW update<br/>student only"]
 ```
+### Distillation Results
+>For detailed distillation comparison, please refers to the [distillation documentation](/Detection/Distillation/distillation_experiment_analysis.md). 
+
+#### TLDR
+**Performance degrations** have been noticed when comparing the distilled models with non-distilled model (fine-tuned only). It is suspected that the small distillation training dataset (1,050 images) significantly constrained the distillation performance.
+
+
+## DFINE
+
 
 
 

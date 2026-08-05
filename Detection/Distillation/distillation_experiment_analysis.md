@@ -23,22 +23,20 @@
 
 ### Coverage matrix
 
-| Teacher ↓ \ Student → | YOLO11n | YOLO11m | YOLO26n | YOLO26m |
+| Teacher \ Student | YOLO11n | YOLO11m | YOLO26n | YOLO26m |
 |----------------------|---------|---------|---------|---------|
-| **Small (ViTs)** | ✓ + mAP | ✓ + mAP | ✓ + mAP | — |
-| **Large (ViTl)** | ✓ + mAP | ✓ + mAP | ✓ + mAP | ✓ + mAP |
-| **Huge (ViTh)** | ✓ + mAP | ✓ + mAP | ✓ + mAP | — |
+| **Small (ViTs)** | ✓ | ✓ | ✓ | — |
+| **Large (ViTl)** | ✓ | ✓ | ✓ | ✓ |
+| **Huge (ViTh)** | ✓ | ✓ | ✓ | — |
 
 ### Student Model Profiles
 
 | Model | Params | GFLOPs | Distilled `.pt` size | Detect loss family |
 |-------|--------|--------|----------------------|--------------------|
 | YOLO11n | 2.62 M | 6.6 | ~5.3–5.5 MB | dfl |
-| YOLO26n | 2.57 M | 6.1 | ~5.2–5.5 MB | l1 (this suite’s newer 26n runs) |
+| YOLO26n | 2.57 M | 6.1 | ~5.2–5.5 MB | l1 |
 | YOLO11m | ~20.1 M | ~68 | ~39–41 MB | dfl |
 | YOLO26m | ~20 M class | — | ~44 MB | l1 |
-
-> **Note:** YOLO26n is not actually smaller than YOLO11n. Differences among nano students are architectural. Medium students are ~8× params vs nano. YOLO11m and YOLO26m are **not interchangeable** (different head/loss family).
 
 ---
 
@@ -59,7 +57,7 @@ Fine-tuned 100 epochs on `yolo11_Training` / labeled train set (imgsz 640). Olde
 | `train-ViTl_yolo26n` | DINOv3-Large | YOLO26n | 0.9640 | 87 | 0.7336 | 100 | 0.9636 | 0.7336 |
 | `train-ViTs_yolo26n` | DINOv3-Small | YOLO26n | 0.9651 | 89 | 0.7284 | 100 | 0.9620 | 0.7284 |
 
-**Reference (not distilled):** `yolo11n_stock` (COCO `yolo11n.pt` fine-tune) — best mAP@50 **0.9834**, best mAP@50-95 **0.7807**.
+**Reference (not distilled):** `yolo11n` — best mAP@50 **0.9787**, best mAP@50-95 **0.7807**.
 
 ### Key Observations
 
@@ -208,41 +206,3 @@ With ~1,050 unlabeled images, large teachers do not pull far ahead on final mAP;
 | **Best nano** | **Huge + YOLO11n**; **Small + YOLO11n** if distill cost matters |
 | **YOLO26m vs YOLO11m** | Prefer **YOLO11m** under the same Large teacher (~1 pp mAP@50-95) |
 | **Avoid as default** | YOLO26n over YOLO11n on this dataset |
-
-### Still missing
-
-- Optional: stock YOLO11m / YOLO26m baselines for pure “distill vs no-distill” medium controls
-- Optional: Small/Huge + YOLO26m for a full 26m teacher sweep (only Large+26m exists)
-
-### Suggested Next Steps
-
-1. **Ship / default medium (mAP@50):** `runs/detect/train-ViTl_yolo11m/weights/best.pt`.
-2. **Ship / default medium (cheap / mAP@50-95):** `runs/detect/train-ViTs_yolo11m/weights/best.pt`.
-3. **Ship / default nano (accuracy):** `runs/detect/train-ViTh_yolo11n/weights/best.pt`.
-4. **Ship / default nano (cheap distill):** `runs/detect/train-ViTs_yolo11n/weights/best.pt`.
-5. **Optional baseline:** Fine-tune stock `yolo11m.pt` / `yolo26m` on the same data to measure distill lift for medium.
-6. Optional: Small/Huge + YOLO26m if a full 26m teacher matrix is needed.
-
----
-
-## 6. File Locations
-
-- Distillation outputs:
-  - `out/distill_ViTs_yolo11n` — Small + YOLO11n
-  - `out/distill_ViTs_yolo11m` — Small + YOLO11m
-  - `out/distill_ViTs_yolo26n` — Small + YOLO26n
-  - `out/distill_ViTh_yolo11n` — Huge + YOLO11n
-  - `out/distill_ViTh_yolo11m` — Huge + YOLO11m
-  - `out/distill_ViTh_yolo26n` — Huge + YOLO26n
-  - `out/distill_ViTl_yolo11n` — Large + YOLO11n
-  - `out/distill_ViTl_yolo11m` — Large + YOLO11m
-  - `out/distill_ViTl_yolo26n` — Large + YOLO26n
-  - `out/distill_ViTl_yolo26m` — Large + YOLO26m
-- Downstream detection runs:
-  - `runs/detect/train-ViTs_yolo11m`, `train-ViTh_yolo11m`, `train-ViTl_yolo11m`
-  - `runs/detect/train-ViTl_yolo26m`
-  - `runs/detect/train-ViTs_yolo11n`, `train-ViTl_yolo11n`, `train-ViTh_yolo11n`
-  - `runs/detect/train-ViTs_yolo26n`, `train-ViTh_yolo26n`, `train-ViTl_yolo26n`
-  - Reference: `runs/detect/yolo11n_stock`
-- Distillation script: `distill.py`
-- Mermaid process diagrams: `/home/ross/distillation_process_mermaid.md`
